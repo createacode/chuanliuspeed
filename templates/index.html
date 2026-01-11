@@ -1,0 +1,2233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>川流 —— 一款最接近真实的网络测速工具</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📶</text></svg>">
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        /* 头部样式 */
+        header {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 24px 32px;
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2.4rem;
+            margin-bottom: 8px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 12px;
+            font-weight: 400;
+        }
+
+        .server-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* 平均速度显示区域 */
+        .average-container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            border: 1px solid #eef2ff;
+            display: none;
+            transition: all 0.3s ease;
+        }
+
+        .average-container.show {
+            display: block;
+            animation: fadeInUp 0.4s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-row {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eef2ff;
+            margin-bottom: 20px;
+        }
+
+        .result-label {
+            font-size: 1.1rem;
+            color: #6b7280;
+            margin-bottom: 12px;
+            font-weight: 500;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .speed-display {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 20px;
+        }
+
+        .speed-item {
+            text-align: center;
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .speed-number {
+            font-size: 3.2rem;
+            font-weight: 800;
+            line-height: 1;
+            color: #4f46e5;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+        }
+
+        .speed-unit {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #6b7280;
+            opacity: 0.9;
+        }
+
+        .completion-time {
+            font-size: 0.9rem;
+            color: #9ca3af;
+            margin-top: 8px;
+            font-style: italic;
+        }
+
+        /* 折线图区域 */
+        .chart-row {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .chart-header {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            padding: 10px;
+        }
+
+        #speedChart {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 计算过程区域 */
+        .calculation-row {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 160px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+            font-size: 0.85rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .calculation-row::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .calculation-row::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .calculation-row::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .calculation-row::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        .calculation-header {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+            font-size: 0.95rem;
+        }
+
+        .calculation-content {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .calculation-line {
+            padding: 4px 0;
+            color: #4b5563;
+            line-height: 1.5;
+            transition: all 0.2s ease;
+        }
+
+        .calculation-line.highlight {
+            color: #059669;
+            font-weight: 700;
+            background-color: #f0fdf4;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border-left: 3px solid #10b981;
+        }
+
+        /* 控制面板 */
+        .control-panel {
+            background: #f8fafc;
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+        /* 主要内容区域 */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            padding: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .speed-display {
+                flex-direction: column;
+                gap: 20px;
+                align-items: center;
+            }
+        }
+
+        /* 面板样式 */
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e7eb;
+            height: 650px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f3f4f6;
+            flex-shrink: 0;
+        }
+
+        .panel-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            background: #f3f4f6;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+        }
+
+        .icon-btn:hover {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        /* 下载源列表 */
+        .sources-list {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+            padding-right: 4px;
+        }
+
+        .sources-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sources-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .sources-list::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .select-all-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            flex-shrink: 0;
+        }
+
+        .select-all-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .selected-count {
+            margin-left: auto;
+            font-size: 0.85rem;
+            color: #6b7280;
+            background: #f3f4f6;
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+
+        .source-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s;
+        }
+
+        .source-item:hover {
+            border-color: #3b82f6;
+            background: #f0f9ff;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+        }
+
+        .source-checkbox {
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .source-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .source-name {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .source-details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+
+        .source-detail-row {
+            display: flex;
+            gap: 16px;
+        }
+
+        .source-size {
+            color: #3b82f6;
+            font-weight: 600;
+        }
+
+        .source-time {
+            color: #6b7280;
+            font-size: 0.8rem;
+        }
+
+        .source-status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+
+        .status-valid {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-invalid {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-timeout {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px dashed #dc2626;
+        }
+
+        .source-status-text {
+            font-size: 0.8rem;
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        /* 测试结果区域 */
+        .test-results {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+            padding-right: 4px;
+        }
+
+        .test-results::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .stats-panel {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid #e5e7eb;
+            flex-shrink: 0;
+            display: none;
+        }
+
+        .stats-panel.show {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .stat-box {
+            text-align: center;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            color: #1f2937;
+            font-size: 1.2rem;
+        }
+
+        .test-id {
+            font-size: 0.8rem;
+            color: #6b7280;
+            background: #f3f4f6;
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+
+        .result-item {
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            background: #f8fafc;
+            border-left: 4px solid #3b82f6;
+            transition: all 0.2s;
+            border-top: 1px solid #e5e7eb;
+            border-right: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .result-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transform: translateY(-1px);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .result-name {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 0.95rem;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .result-status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-timeout {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px dashed #dc2626;
+        }
+
+        .result-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .result-detail {
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .detail-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-weight: 700;
+            color: #1f2937;
+            font-size: 0.95rem;
+        }
+
+        .speed-value {
+            color: #10b981;
+        }
+
+        .progress-container {
+            margin-top: 12px;
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 6px;
+            background: #f3f4f6;
+            border-radius: 6px;
+        }
+
+        .stat-value-small {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 0.85rem;
+        }
+
+        .download-size {
+            color: #3b82f6;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        /* 无结果提示 */
+        .no-results {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .no-results-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .close-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        /* 通知样式 */
+        .notification {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1001;
+            max-width: 350px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .notification.info {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e5e7eb;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 页脚 */
+        .footer {
+            text-align: center;
+            padding: 16px;
+            color: #6b7280;
+            font-size: 0.85rem;
+            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 0;
+            }
+            
+            header {
+                padding: 20px 16px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .main-content {
+                padding: 16px;
+                gap: 16px;
+            }
+            
+            .panel {
+                height: 550px;
+            }
+            
+            .control-panel {
+                padding: 16px;
+            }
+            
+            .btn {
+                padding: 10px 18px;
+                font-size: 0.9rem;
+            }
+            
+            .speed-number {
+                font-size: 2.5rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .result-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                height: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📶 川流 —— 一款最接近真实的网络测速工具</h1>
+            <div class="subtitle">建议先点击验证链接再开始测速，测速前请先勾选可用源，理论上源越多越接近真实值！</div>
+            <div id="serverStatus" class="server-status">
+                <span class="loading"></span> 正在验证下载源...
+            </div>
+        </header>
+
+        <!-- 平均速度显示区域 -->
+        <div class="average-container" id="averageContainer">
+            <div class="result-row">
+                <div class="result-label">
+                    <i>📊</i> <span id="averageSpeedLabel">当前平均下载速度</span>
+                </div>
+                <div class="speed-display">
+                    <div class="speed-item">
+                        <div class="speed-number" id="avgSpeedMbps">0.00</div>
+                        <div class="speed-unit">Mbps</div>
+                    </div>
+                    <div class="speed-item">
+                        <div class="speed-number" id="avgSpeedMBs">0.00</div>
+                        <div class="speed-unit">MB/s</div>
+                    </div>
+                </div>
+                <div class="completion-time" id="completionTime">测试完成时间: --</div>
+            </div>
+            
+            <!-- 折线图区域 -->
+            <div class="chart-row" id="chartRow" style="display: none;">
+                <div class="chart-header">
+                    <i>📈</i> 下载速度趋势图
+                </div>
+                <div class="chart-container">
+                    <canvas id="speedChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 计算过程区域 -->
+            <div class="calculation-row" id="calculationRow">
+                <div class="calculation-header">计算过程:</div>
+                <div class="calculation-content" id="calculationContent">
+                    <!-- 计算过程将通过JS动态生成 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 控制面板 -->
+        <div class="control-panel">
+            <button class="btn btn-primary" id="startTest" title="请先勾选要测试的下载源">
+                <span>▶️ 开始测试</span>
+            </button>
+            <button class="btn btn-secondary" id="resetState">
+                <span>🔄 重置状态</span>
+            </button>
+            <button class="btn btn-danger" id="stopTest" disabled>
+                <span>⏹️ 停止测试</span>
+            </button>
+            <button class="btn btn-info" id="validateSources">
+                <span>🔍 验证链接</span>
+            </button>
+        </div>
+
+        <!-- 主要内容区域 -->
+        <div class="main-content">
+            <!-- 下载源配置区域 -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">📥 下载源配置</div>
+                    <div class="panel-actions">
+                        <button class="icon-btn" id="addSource" title="添加下载源">+</button>
+                        <button class="icon-btn" id="refreshSources" title="刷新列表">↻</button>
+                    </div>
+                </div>
+                
+                <div class="select-all-container">
+                    <input type="checkbox" id="selectAllCheckbox">
+                    <label for="selectAllCheckbox" class="select-all-label">全选/全不选</label>
+                    <span id="selectedCount" class="selected-count">已选择 0 个</span>
+                </div>
+                
+                <div class="sources-list" id="sourcesList">
+                    <div class="no-results" id="loadingSources">
+                        <div class="loading" style="margin-bottom: 12px; width: 24px; height: 24px;"></div>
+                        正在加载下载源...
+                    </div>
+                </div>
+            </div>
+
+            <!-- 测试结果区域 -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">📊 测试结果</div>
+                    <div class="panel-actions">
+                        <span id="testId" class="test-id">等待测试开始</span>
+                    </div>
+                </div>
+                
+                <!-- 测试统计信息 -->
+                <div class="stats-panel" id="testStats">
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">测试中</div>
+                            <div class="stat-value" id="testingCount">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">已完成</div>
+                            <div class="stat-value" id="completedCount">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">成功数</div>
+                            <div class="stat-value" id="successCount">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">失败数</div>
+                            <div class="stat-value" id="failedCount">0</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 测试结果列表 -->
+                <div class="test-results" id="testResults">
+                    <div class="no-results">
+                        <div class="no-results-icon">📈</div>
+                        <div style="font-size: 1.1rem; margin-bottom: 8px;">等待测试开始</div>
+                        <div style="font-size: 0.9rem;">选择下载源并点击"开始测试"按钮</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="footer">
+            <p>川流不息-网络测速工具 v1.5 | Copyright &copy; 2026 by <a href="mailto:mantaqing@163.com" style="color:#0066ff;text-decoration:none;font-weight:600;background:linear-gradient(90deg,#0066ff,#00c3ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;transition:filter .3s" onmouseover="this.style.filter='brightness(1.3)'" onmouseout="this.style.filter=''">XAF</a> | 本地端口: 8400 | 单个超时: 159秒 | 测试结果保存在"结果"文件夹中</p>
+        </div>
+    </div>
+
+    <!-- 添加/编辑源模态框 -->
+    <div class="modal" id="sourceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">添加下载源</div>
+                <button class="close-btn" id="closeModal">×</button>
+            </div>
+            <form id="sourceForm">
+                <input type="hidden" id="sourceId">
+                <div class="form-group">
+                    <label class="form-label" for="sourceName">源名称</label>
+                    <input type="text" class="form-input" id="sourceName" required placeholder="例如: 百度网盘">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="sourceUrl">下载链接</label>
+                    <input type="url" class="form-input" id="sourceUrl" required placeholder="https://example.com/file.exe">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" id="cancelModal" style="background: #e5e7eb; color: #374151;">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 通知 -->
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // 全局变量
+        let sources = {};
+        let selectedSources = new Set();
+        let isTesting = false;
+        let currentTestId = null;
+        let pollingInterval = null;
+        let validationInProgress = false;
+        let calculationLines = [];
+        let completionTime = null;
+        let firstLoadComplete = false;
+        let lastSpeedData = { avgSpeedMbps: 0, avgSpeedMBs: 0 };
+        let successfulTests = []; // 存储成功测试的源数据
+        let calculationSteps = []; // 存储计算过程的每一步
+        let chart = null; // 存储图表实例
+        let chartData = []; // 存储图表数据
+
+        // DOM 元素
+        const sourcesList = document.getElementById('sourcesList');
+        const testResults = document.getElementById('testResults');
+        const averageContainer = document.getElementById('averageContainer');
+        const avgSpeedMbpsElement = document.getElementById('avgSpeedMbps');
+        const avgSpeedMBsElement = document.getElementById('avgSpeedMBs');
+        const averageSpeedLabel = document.getElementById('averageSpeedLabel');
+        const calculationContent = document.getElementById('calculationContent');
+        const calculationRow = document.getElementById('calculationRow');
+        const chartRow = document.getElementById('chartRow');
+        const completionTimeElement = document.getElementById('completionTime');
+        const testIdElement = document.getElementById('testId');
+        const startTestBtn = document.getElementById('startTest');
+        const resetStateBtn = document.getElementById('resetState');
+        const stopTestBtn = document.getElementById('stopTest');
+        const validateBtn = document.getElementById('validateSources');
+        const addSourceBtn = document.getElementById('addSource');
+        const refreshBtn = document.getElementById('refreshSources');
+        const sourceModal = document.getElementById('sourceModal');
+        const closeModalBtn = document.getElementById('closeModal');
+        const cancelModalBtn = document.getElementById('cancelModal');
+        const sourceForm = document.getElementById('sourceForm');
+        const modalTitle = document.getElementById('modalTitle');
+        const sourceIdInput = document.getElementById('sourceId');
+        const sourceNameInput = document.getElementById('sourceName');
+        const sourceUrlInput = document.getElementById('sourceUrl');
+        const notification = document.getElementById('notification');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const selectedCountElement = document.getElementById('selectedCount');
+        const testStats = document.getElementById('testStats');
+        const testingCountElement = document.getElementById('testingCount');
+        const completedCountElement = document.getElementById('completedCount');
+        const successCountElement = document.getElementById('successCount');
+        const failedCountElement = document.getElementById('failedCount');
+        const serverStatus = document.getElementById('serverStatus');
+        const loadingSources = document.getElementById('loadingSources');
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 首次加载
+            loadSources();
+            attachEventListeners();
+            startValidationPolling();
+            
+            // 首次打开10秒后自动刷新下载源列表
+            setTimeout(() => {
+                if (!firstLoadComplete) {
+                    loadSources();
+                    showNotification('已自动刷新下载源列表', 'info');
+                }
+            }, 10000);
+        });
+
+        // 加载下载源
+        async function loadSources() {
+            try {
+                const response = await fetch('/api/config');
+                const data = await response.json();
+                
+                if (data.success) {
+                    sources = data.sources;
+                    validationInProgress = data.validation_in_progress || false;
+                    updateServerStatus();
+                    renderSourcesList();
+                    firstLoadComplete = true;
+                } else {
+                    showNotification('加载配置失败', 'error');
+                }
+            } catch (error) {
+                console.error('加载源失败:', error);
+                showNotification('网络错误，请检查服务器连接', 'error');
+            }
+        }
+
+        // 渲染下载源列表
+        function renderSourcesList() {
+            if (Object.keys(sources).length === 0) {
+                sourcesList.innerHTML = '<div class="no-results">暂无下载源，请添加或等待验证完成</div>';
+                return;
+            }
+            
+            sourcesList.innerHTML = '';
+            
+            Object.entries(sources).forEach(([id, source]) => {
+                const isChecked = selectedSources.has(id);
+                const isValid = source.valid || false;
+                const isEnabled = source.enabled !== false;
+                const size = source.size || '未知';
+                const lastValidation = source.last_validation || '从未验证';
+                const lastStatus = source.last_status || '';
+                
+                // 根据状态确定样式
+                let statusClass = 'status-invalid';
+                let statusText = '不可用';
+                
+                if (isValid) {
+                    statusClass = 'status-valid';
+                    statusText = '可用';
+                } else if (validationInProgress) {
+                    statusClass = 'status-pending';
+                    statusText = '验证中';
+                }
+                
+                // 检查是否是超时状态
+                if (lastStatus.includes('超时') || lastStatus.includes('测试超时')) {
+                    statusClass = 'status-timeout';
+                    statusText = '超时';
+                }
+                
+                const sourceItem = document.createElement('div');
+                sourceItem.className = 'source-item';
+                sourceItem.dataset.id = id;
+                
+                sourceItem.innerHTML = `
+                    <div class="source-checkbox">
+                        <input type="checkbox" id="source_${id}" 
+                               ${isChecked ? 'checked' : ''}
+                               ${(!isValid || !isEnabled) ? 'disabled' : ''}>
+                    </div>
+                    <div class="source-info">
+                        <div class="source-name">${source.name}</div>
+                        <div class="source-details">
+                            <div class="source-detail-row">
+                                <span>大小: <span class="source-size">${size}</span></span>
+                                <span>状态: ${statusText}</span>
+                            </div>
+                            <div class="source-detail-row">
+                                <span class="source-time">上次验证: ${lastValidation}</span>
+                                ${lastStatus ? `<span class="source-status-text">${lastStatus}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="source-status ${statusClass}">
+                        ${statusText}
+                    </div>
+                    <div class="panel-actions">
+                        <button class="icon-btn edit-source" data-id="${id}" title="编辑">✏</button>
+                        <button class="icon-btn delete-source" data-id="${id}" title="删除">🗑</button>
+                    </div>
+                `;
+                
+                sourcesList.appendChild(sourceItem);
+                
+                // 添加复选框事件监听
+                const checkbox = sourceItem.querySelector(`#source_${id}`);
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        selectedSources.add(id);
+                    } else {
+                        selectedSources.delete(id);
+                    }
+                    updateSelectedCount();
+                    updateTestButtonState();
+                    updateSelectAllCheckbox();
+                });
+                
+                // 添加编辑按钮事件
+                const editBtn = sourceItem.querySelector('.edit-source');
+                editBtn.addEventListener('click', () => openEditModal(id));
+                
+                // 添加删除按钮事件
+                const deleteBtn = sourceItem.querySelector('.delete-source');
+                deleteBtn.addEventListener('click', () => deleteSource(id));
+            });
+            
+            updateSelectedCount();
+            updateTestButtonState();
+            updateSelectAllCheckbox();
+        }
+
+        // 更新选中数量
+        function updateSelectedCount() {
+            selectedCountElement.textContent = `已选择 ${selectedSources.size} 个`;
+        }
+
+        // 更新全选复选框
+        function updateSelectAllCheckbox() {
+            const allCheckboxes = document.querySelectorAll('.source-checkbox input[type="checkbox"]:not(:disabled)');
+            const allChecked = allCheckboxes.length > 0 && Array.from(allCheckboxes).every(checkbox => checkbox.checked);
+            selectAllCheckbox.checked = allChecked;
+            selectAllCheckbox.indeterminate = selectedSources.size > 0 && !allChecked;
+        }
+
+        // 更新测试按钮状态
+        function updateTestButtonState() {
+            const hasValidSelection = Array.from(selectedSources).some(id => 
+                sources[id] && (sources[id].valid || false)
+            );
+            
+            startTestBtn.disabled = !hasValidSelection || isTesting;
+            
+            // 设置按钮提示
+            if (!hasValidSelection) {
+                startTestBtn.title = "请先勾选要测试的下载源";
+            } else {
+                startTestBtn.title = "开始测试";
+            }
+            
+            resetStateBtn.disabled = false;
+            stopTestBtn.disabled = !isTesting;
+        }
+
+        // 开始测试
+        async function startTest() {
+            if (selectedSources.size === 0) {
+                showNotification('请先勾选要测试的下载源', 'error');
+                return;
+            }
+            
+            // 检查是否有有效的下载源被选中
+            const hasValidSelection = Array.from(selectedSources).some(id => 
+                sources[id] && (sources[id].valid || false)
+            );
+            
+            if (!hasValidSelection) {
+                showNotification('请勾选有效的下载源进行测试', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        sources: Array.from(selectedSources)
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentTestId = data.test_id;
+                    isTesting = true;
+                    testIdElement.textContent = `测试ID: ${currentTestId}`;
+                    testStats.classList.add('show');
+                    updateTestButtonState();
+                    
+                    // 重置平均速度显示
+                    avgSpeedMbpsElement.textContent = '0.00';
+                    avgSpeedMBsElement.textContent = '0.00';
+                    averageContainer.classList.remove('show');
+                    
+                    // 清空计算过程和完成时间
+                    calculationLines = [];
+                    calculationSteps = [];
+                    successfulTests = [];
+                    chartData = [];
+                    calculationContent.innerHTML = '';
+                    completionTime = null;
+                    completionTimeElement.textContent = '测试完成时间: --';
+                    lastSpeedData = { avgSpeedMbps: 0, avgSpeedMBs: 0 };
+                    
+                    // 重置图表
+                    chartRow.style.display = 'none';
+                    if (chart) {
+                        chart.destroy();
+                        chart = null;
+                    }
+                    
+                    // 更新平均速度标签
+                    averageSpeedLabel.textContent = '当前平均下载速度';
+                    
+                    // 初始化测试结果区域
+                    testResults.innerHTML = '';
+                    
+                    // 显示测试中的源
+                    Array.from(selectedSources).forEach(sourceId => {
+                        if (sources[sourceId]) {
+                            const resultItem = createResultItem(sourceId, {
+                                name: sources[sourceId].name,
+                                downloaded_size: 0,
+                                status: '测试中...',
+                                progress: 0,
+                                elapsed_time: 0,
+                                current_speed_mbps: 0,
+                                current_speed_mbs: 0
+                            });
+                            testResults.appendChild(resultItem);
+                        }
+                    });
+                    
+                    // 开始轮询测试状态
+                    startPolling();
+                    showNotification('测试已开始', 'success');
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('开始测试失败:', error);
+                showNotification('网络错误', 'error');
+            }
+        }
+
+        // 停止测试
+        async function stopTest() {
+            try {
+                const response = await fetch('/api/stop', {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification(data.message, 'info');
+                }
+            } catch (error) {
+                console.error('停止测试失败:', error);
+            }
+        }
+
+        // 重置所有状态
+        async function resetState() {
+            try {
+                const response = await fetch('/api/reset', {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 重置前端状态
+                    sources = data.sources || {};
+                    isTesting = false;
+                    currentTestId = null;
+                    testIdElement.textContent = '等待测试开始';
+                    testStats.classList.remove('show');
+                    averageContainer.classList.remove('show');
+                    updateTestButtonState();
+                    
+                    // 清除选中状态
+                    selectedSources.clear();
+                    
+                    // 清空测试结果和计算过程
+                    calculationLines = [];
+                    calculationSteps = [];
+                    successfulTests = [];
+                    chartData = [];
+                    calculationContent.innerHTML = '';
+                    completionTime = null;
+                    completionTimeElement.textContent = '测试完成时间: --';
+                    lastSpeedData = { avgSpeedMbps: 0, avgSpeedMBs: 0 };
+                    
+                    // 重置图表
+                    chartRow.style.display = 'none';
+                    if (chart) {
+                        chart.destroy();
+                        chart = null;
+                    }
+                    
+                    // 更新平均速度标签
+                    averageSpeedLabel.textContent = '当前平均下载速度';
+                    
+                    testResults.innerHTML = `
+                        <div class="no-results">
+                            <div class="no-results-icon">📈</div>
+                            <div style="font-size: 1.1rem; margin-bottom: 8px;">等待测试开始</div>
+                            <div style="font-size: 0.9rem;">选择下载源并点击"开始测试"按钮</div>
+                        </div>
+                    `;
+                    
+                    // 重新渲染下载源列表
+                    renderSourcesList();
+                    
+                    showNotification('所有状态已重置', 'info');
+                }
+            } catch (error) {
+                console.error('重置状态失败:', error);
+                showNotification('重置状态失败', 'error');
+            }
+        }
+
+        // 验证下载源
+        async function validateSources() {
+            try {
+                validateBtn.innerHTML = '<span class="loading"></span> 验证中...';
+                validateBtn.disabled = true;
+                
+                const response = await fetch('/api/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        sources: Object.keys(sources)
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    validationInProgress = true;
+                    updateServerStatus();
+                    showNotification('验证已开始，请等待完成', 'info');
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('验证失败:', error);
+                showNotification('网络错误', 'error');
+            } finally {
+                setTimeout(() => {
+                    validateBtn.innerHTML = '<span>🔍 验证链接</span>';
+                    validateBtn.disabled = false;
+                }, 1000);
+            }
+        }
+
+        // 开始轮询测试状态
+        function startPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+            
+            pollingInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/api/status');
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        if (!data.is_testing && isTesting) {
+                            // 测试结束
+                            isTesting = false;
+                            clearInterval(pollingInterval);
+                            updateTestButtonState();
+                            
+                            // 更新平均速度标签
+                            averageSpeedLabel.textContent = '最终平均下载速度';
+                            
+                            // 重新加载源列表以更新状态
+                            loadSources();
+                            
+                            // 更新完成时间
+                            if (!completionTime) {
+                                completionTime = new Date();
+                                completionTimeElement.textContent = `测试完成时间: ${completionTime.toLocaleString('zh-CN')}`;
+                            }
+                            
+                            showNotification('测试完成', 'success');
+                        }
+                        
+                        if (data.results) {
+                            updateTestResults(data.results, data.avg_speed_mbps, data.avg_speed_mbs, data.calculation_process, data.stats);
+                        }
+                    }
+                } catch (error) {
+                    console.error('获取状态失败:', error);
+                }
+            }, 500);
+        }
+
+        // 创建结果项
+        function createResultItem(sourceId, result) {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'result-item';
+            resultItem.id = `result_${sourceId}`;
+            
+            const isSuccess = result.status === '成功';
+            const isError = result.status !== '成功' && result.status !== '测试中...' && result.status !== '测试中';
+            const isPending = result.status === '测试中...' || result.status === '测试中';
+            const isTimeout = result.status.includes('超时');
+            
+            let statusClass = 'status-pending';
+            let statusText = '测试中';
+            
+            if (isSuccess) {
+                statusClass = 'status-success';
+                statusText = '成功';
+            } else if (isTimeout) {
+                statusClass = 'status-timeout';
+                statusText = '超时';
+            } else if (isError) {
+                statusClass = 'status-error';
+                statusText = result.status;
+            }
+            
+            let detailsHtml = '';
+            let progressHtml = '';
+            
+            if (isPending) {
+                progressHtml = `
+                    <div class="progress-container">
+                        <div class="progress-header">
+                            <span>下载进度</span>
+                            <span>${result.progress.toFixed(1)}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${result.progress}%"></div>
+                        </div>
+                        <div class="progress-stats">
+                            <div class="stat-item">
+                                <div>已耗时</div>
+                                <div class="stat-value-small">${result.elapsed_time ? result.elapsed_time.toFixed(1) : '0.0'}s</div>
+                            </div>
+                            <div class="stat-item">
+                                <div>实时速度</div>
+                                <div class="stat-value-small">${result.current_speed_mbps ? result.current_speed_mbps.toFixed(2) : '0.00'} Mbps</div>
+                            </div>
+                            <div class="stat-item">
+                                <div>实时速度</div>
+                                <div class="stat-value-small">${result.current_speed_mbs ? result.current_speed_mbs.toFixed(2) : '0.00'} MB/s</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (isSuccess) {
+                detailsHtml = `
+                    <div class="result-details">
+                        <div class="result-detail">
+                            <div class="detail-label">下载时间</div>
+                            <div class="detail-value">${result.time ? result.time.toFixed(2) : '0.00'}s</div>
+                        </div>
+                        <div class="result-detail">
+                            <div class="detail-label">下载速度</div>
+                            <div class="detail-value speed-value">
+                                ${result.speed_mbps ? result.speed_mbps.toFixed(2) : '0.00'} Mbps<br>
+                                ${result.speed_mbs ? result.speed_mbs.toFixed(2) : '0.00'} MB/s
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 显示已下载大小
+            let downloadedSizeHtml = '';
+            if (result.downloaded_size && result.downloaded_size > 0) {
+                downloadedSizeHtml = `<div style="color: #6b7280; margin: 8px 0; font-size: 0.85rem;">已下载大小: <span class="download-size">${formatFileSize(result.downloaded_size)}</span></div>`;
+            }
+            
+            resultItem.innerHTML = `
+                <div class="result-header">
+                    <div class="result-name">${result.name}</div>
+                    <div class="result-status ${statusClass}">${statusText}</div>
+                </div>
+                ${downloadedSizeHtml}
+                ${progressHtml}
+                ${detailsHtml}
+                ${isError && !isTimeout ? `
+                    <div style="color: #ef4444; font-size: 0.85rem; margin-top: 8px;">
+                        ${result.status}
+                    </div>
+                ` : ''}
+            `;
+            
+            return resultItem;
+        }
+
+        // 格式化文件大小
+        function formatFileSize(sizeBytes) {
+            if (!sizeBytes || sizeBytes < 1024) {
+                return `${sizeBytes || 0} B`;
+            } else if (sizeBytes < 1024 * 1024) {
+                return `${(sizeBytes/1024).toFixed(2)} KB`;
+            } else if (sizeBytes < 1024 * 1024 * 1024) {
+                return `${(sizeBytes/(1024*1024)).toFixed(2)} MB`;
+            } else {
+                return `${(sizeBytes/(1024*1024*1024)).toFixed(2)} GB`;
+            }
+        }
+
+        // 创建图表
+        function createChart() {
+            const ctx = document.getElementById('speedChart').getContext('2d');
+            
+            // 准备数据
+            const labels = chartData.map((item, index) => `源${index + 1}`);
+            const data = chartData.map(item => item.speedMbps);
+            
+            // 计算平均速度
+            const avgSpeed = data.length > 0 ? data.reduce((sum, val) => sum + val, 0) / data.length : 0;
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '下载速度 (Mbps)',
+                            data: data,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#3b82f6',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: '平均速度',
+                            data: data.map(() => avgSpeed),
+                            borderColor: '#10b981',
+                            borderWidth: 1.5,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '速度 (Mbps)',
+                                color: '#6b7280'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                color: '#6b7280'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '测试源',
+                                color: '#6b7280'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                color: '#6b7280'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#6b7280',
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                            titleColor: '#1f2937',
+                            bodyColor: '#1f2937',
+                            borderColor: '#e5e7eb',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.datasetIndex === 0) {
+                                        return `速度: ${context.raw.toFixed(2)} Mbps`;
+                                    } else {
+                                        return `平均: ${context.raw.toFixed(2)} Mbps`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 更新图表数据
+        function updateChart() {
+            // 如果图表不存在且有待显示的数据，创建图表
+            if (!chart && chartData.length > 0) {
+                chartRow.style.display = 'block';
+                createChart();
+            } 
+            // 如果图表已存在，更新数据
+            else if (chart) {
+                const labels = chartData.map((item, index) => `源${index + 1}`);
+                const data = chartData.map(item => item.speedMbps);
+                const avgSpeed = data.length > 0 ? data.reduce((sum, val) => sum + val, 0) / data.length : 0;
+                
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = data;
+                chart.data.datasets[1].data = data.map(() => avgSpeed);
+                chart.update();
+            }
+        }
+
+        // 更新测试结果
+        function updateTestResults(results, avgSpeedMbps, avgSpeedMBs, calcProcess, stats) {
+            if (!results || Object.keys(results).length === 0) {
+                return;
+            }
+            
+            // 更新统计信息
+            if (stats) {
+                testingCountElement.textContent = stats.testing_count || 0;
+                completedCountElement.textContent = stats.completed_count || 0;
+                successCountElement.textContent = stats.success_count || 0;
+                failedCountElement.textContent = stats.failed_count || 0;
+            }
+            
+            // 更新或创建结果项
+            Object.entries(results).forEach(([sourceId, result]) => {
+                let resultItem = document.getElementById(`result_${sourceId}`);
+                
+                if (!resultItem) {
+                    resultItem = createResultItem(sourceId, result);
+                    testResults.appendChild(resultItem);
+                } else {
+                    // 更新现有项
+                    resultItem.outerHTML = createResultItem(sourceId, result).outerHTML;
+                }
+                
+                // 记录成功测试的源
+                if (result.status === '成功' && result.speed_mbps) {
+                    // 检查是否已经记录过这个源
+                    const existingIndex = successfulTests.findIndex(test => test.id === sourceId);
+                    if (existingIndex === -1) {
+                        // 添加新成功测试
+                        successfulTests.push({
+                            id: sourceId,
+                            name: result.name,
+                            speedMbps: result.speed_mbps,
+                            speedMBs: result.speed_mbs
+                        });
+                        
+                        // 更新图表数据
+                        chartData.push({
+                            name: result.name,
+                            speedMbps: result.speed_mbps
+                        });
+                        
+                        // 更新图表
+                        updateChart();
+                        
+                        // 更新计算过程
+                        updateCalculationSteps();
+                    }
+                }
+            });
+            
+            // 更新平均速度显示
+            console.log('后端返回的平均速度数据:', avgSpeedMbps, avgSpeedMBs);
+            
+            // 根据测试状态更新平均速度显示
+            if (isTesting) {
+                // 测试中：使用当前所有成功测试源的平均速度
+                const currentSpeeds = successfulTests.map(test => test.speedMbps);
+                let avgMbps, avgMBs;
+                
+                if (currentSpeeds.length > 0) {
+                    avgMbps = currentSpeeds.reduce((sum, val) => sum + val, 0) / currentSpeeds.length;
+                    avgMBs = avgMbps * 0.125; // 转换为MB/s
+                } else {
+                    avgMbps = 0;
+                    avgMBs = 0;
+                }
+                
+                avgSpeedMbpsElement.textContent = avgMbps.toFixed(2);
+                avgSpeedMBsElement.textContent = avgMBs.toFixed(2);
+                
+                // 保存当前速度数据
+                lastSpeedData = { avgSpeedMbps: avgMbps, avgSpeedMBs: avgMBs };
+                
+                // 显示平均速度区域（只要有成功测试就显示）
+                if (successfulTests.length > 0) {
+                    averageContainer.classList.add('show');
+                }
+                
+                console.log('测试中平均速度:', avgMbps, avgMBs);
+            } else {
+                // 测试完成：使用后端返回的平均速度
+                if (typeof avgSpeedMbps === 'number' && !isNaN(avgSpeedMbps) && 
+                    typeof avgSpeedMBs === 'number' && !isNaN(avgSpeedMBs)) {
+                    
+                    avgSpeedMbpsElement.textContent = avgSpeedMbps.toFixed(2);
+                    avgSpeedMBsElement.textContent = avgSpeedMBs.toFixed(2);
+                    
+                    // 保存当前速度数据
+                    lastSpeedData = { avgSpeedMbps, avgSpeedMBs };
+                    
+                    console.log('测试完成平均速度:', avgSpeedMbps, avgSpeedMBs);
+                } else if (lastSpeedData.avgSpeedMbps > 0 || lastSpeedData.avgSpeedMBs > 0) {
+                    // 如果后端返回无效数据，但之前有有效数据，使用之前的数据
+                    avgSpeedMbpsElement.textContent = lastSpeedData.avgSpeedMbps.toFixed(2);
+                    avgSpeedMBsElement.textContent = lastSpeedData.avgSpeedMBs.toFixed(2);
+                }
+                
+                // 测试完成总是显示平均速度区域
+                averageContainer.classList.add('show');
+                
+                // 测试完成后，如果有后端的计算过程，也显示
+                if (calcProcess && !isTesting) {
+                    // 清空现有的计算过程行
+                    calculationLines = [];
+                    
+                    // 将新的计算过程分割成行
+                    const lines = calcProcess.split('\n').filter(line => line.trim() !== '');
+                    
+                    // 找出最终平均下载速度行
+                    let finalSpeedLine = null;
+                    
+                    lines.forEach(line => {
+                        calculationLines.push(line);
+                        if (line.includes('最终平均下载速度')) {
+                            finalSpeedLine = line;
+                        }
+                    });
+                    
+                    // 更新计算过程显示
+                    calculationContent.innerHTML = '';
+                    
+                    calculationLines.forEach(line => {
+                        const lineDiv = document.createElement('div');
+                        lineDiv.className = 'calculation-line';
+                        
+                        if (line === finalSpeedLine || line.includes('平均下载速度:')) {
+                            lineDiv.classList.add('highlight');
+                        }
+                        
+                        lineDiv.textContent = line;
+                        calculationContent.appendChild(lineDiv);
+                    });
+                    
+                    // 滚动到底部以显示最新结果
+                    calculationRow.scrollTop = calculationRow.scrollHeight;
+                }
+            }
+            
+            // 如果没有结果项，显示提示
+            if (testResults.children.length === 0) {
+                testResults.innerHTML = `
+                    <div class="no-results">
+                        <div class="no-results-icon">📈</div>
+                        <div style="font-size: 1.1rem; margin-bottom: 8px;">等待测试开始</div>
+                        <div style="font-size: 0.9rem;">选择下载源并点击"开始测试"按钮</div>
+                    </div>
+                `;
+            }
+        }
+
+        // 更新计算步骤
+        function updateCalculationSteps() {
+            if (successfulTests.length === 0) {
+                calculationContent.innerHTML = '<div class="calculation-line">暂无成功测试结果</div>';
+                return;
+            }
+            
+            calculationContent.innerHTML = '';
+            
+            // 显示每个成功测试源的速度
+            successfulTests.forEach((test, index) => {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'calculation-line';
+                lineDiv.textContent = `第${index + 1}个源 "${test.name}": ${test.speedMbps.toFixed(2)} Mbps / ${test.speedMBs.toFixed(2)} MB/s`;
+                calculationContent.appendChild(lineDiv);
+            });
+            
+            // 计算当前平均速度
+            const currentSpeeds = successfulTests.map(test => test.speedMbps);
+            const avgMbps = currentSpeeds.length > 0 ? currentSpeeds.reduce((sum, val) => sum + val, 0) / currentSpeeds.length : 0;
+            const avgMBs = avgMbps * 0.125;
+            
+            // 显示当前平均速度
+            const avgLineDiv = document.createElement('div');
+            avgLineDiv.className = 'calculation-line highlight';
+            
+            if (isTesting) {
+                // 测试中显示当前平均速度
+                avgLineDiv.textContent = `当前平均速度 (${successfulTests.length}个源): ${avgMbps.toFixed(2)} Mbps / ${avgMBs.toFixed(2)} MB/s`;
+            } else {
+                // 测试完成显示最终平均速度
+                avgLineDiv.textContent = `最终平均速度 (${successfulTests.length}个源): ${avgMbps.toFixed(2)} Mbps / ${avgMBs.toFixed(2)} MB/s`;
+            }
+            
+            calculationContent.appendChild(avgLineDiv);
+            
+            // 滚动到底部以显示最新结果
+            calculationRow.scrollTop = calculationRow.scrollHeight;
+        }
+
+        // 打开添加/编辑模态框
+        function openEditModal(sourceId = null) {
+            if (sourceId) {
+                // 编辑模式
+                modalTitle.textContent = '编辑下载源';
+                const source = sources[sourceId];
+                sourceIdInput.value = sourceId;
+                sourceNameInput.value = source.name;
+                sourceUrlInput.value = source.url;
+            } else {
+                // 添加模式
+                modalTitle.textContent = '添加下载源';
+                sourceIdInput.value = '';
+                sourceNameInput.value = '';
+                sourceUrlInput.value = '';
+            }
+            
+            sourceModal.style.display = 'flex';
+        }
+
+        // 保存下载源
+        async function saveSource(event) {
+            event.preventDefault();
+            
+            const sourceId = sourceIdInput.value;
+            const name = sourceNameInput.value.trim();
+            const url = sourceUrlInput.value.trim();
+            
+            if (!name || !url) {
+                showNotification('名称和URL不能为空', 'error');
+                return;
+            }
+            
+            try {
+                const action = sourceId ? 'update' : 'add';
+                
+                const response = await fetch('/api/config/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: action,
+                        id: sourceId,
+                        name: name,
+                        url: url
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    sources = data.sources;
+                    renderSourcesList();
+                    closeModal();
+                    showNotification(sourceId ? '下载源已更新' : '下载源已添加', 'success');
+                    
+                    // 自动验证新添加的源
+                    if (!sourceId) {
+                        setTimeout(() => {
+                            validateSources();
+                        }, 1000);
+                    }
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('保存失败:', error);
+                showNotification('网络错误', 'error');
+            }
+        }
+
+        // 删除下载源
+        async function deleteSource(sourceId) {
+            if (!confirm('确定要删除这个下载源吗？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/config/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'delete',
+                        id: sourceId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    sources = data.sources;
+                    selectedSources.delete(sourceId);
+                    renderSourcesList();
+                    showNotification('下载源已删除', 'success');
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            } catch (error) {
+                console.error('删除失败:', error);
+                showNotification('网络错误', 'error');
+            }
+        }
+
+        // 全选/全不选
+        function toggleSelectAll() {
+            const allCheckboxes = document.querySelectorAll('.source-checkbox input[type="checkbox"]:not(:disabled)');
+            const allChecked = selectAllCheckbox.checked;
+            
+            // 更新所有可用的复选框
+            allCheckboxes.forEach(checkbox => {
+                checkbox.checked = allChecked;
+                const sourceId = checkbox.id.replace('source_', '');
+                if (allChecked) {
+                    selectedSources.add(sourceId);
+                } else {
+                    selectedSources.delete(sourceId);
+                }
+            });
+            
+            updateSelectedCount();
+            updateTestButtonState();
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            sourceModal.style.display = 'none';
+            sourceForm.reset();
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // 更新服务器状态
+        function updateServerStatus() {
+            if (validationInProgress) {
+                serverStatus.innerHTML = '<span class="loading"></span> 正在验证下载源...';
+            } else {
+                const validCount = Object.values(sources).filter(s => s.valid).length;
+                const totalCount = Object.keys(sources).length;
+                serverStatus.textContent = `已验证 ${validCount}/${totalCount} 个下载源`;
+            }
+        }
+
+        // 开始验证状态轮询
+        function startValidationPolling() {
+            setInterval(async () => {
+                try {
+                    const response = await fetch('/api/config');
+                    const data = await response.json();
+                    
+                    if (data.success && data.validation_in_progress !== validationInProgress) {
+                        validationInProgress = data.validation_in_progress;
+                        updateServerStatus();
+                        
+                        // 如果验证完成，重新加载源
+                        if (!validationInProgress) {
+                            loadSources();
+                        }
+                    }
+                } catch (error) {
+                    console.error('获取验证状态失败:', error);
+                }
+            }, 2000);
+        }
+
+        // 绑定事件监听器
+        function attachEventListeners() {
+            startTestBtn.addEventListener('click', startTest);
+            resetStateBtn.addEventListener('click', resetState);
+            stopTestBtn.addEventListener('click', stopTest);
+            validateBtn.addEventListener('click', validateSources);
+            addSourceBtn.addEventListener('click', () => openEditModal());
+            refreshBtn.addEventListener('click', loadSources);
+            
+            selectAllCheckbox.addEventListener('change', toggleSelectAll);
+            
+            closeModalBtn.addEventListener('click', closeModal);
+            cancelModalBtn.addEventListener('click', closeModal);
+            sourceForm.addEventListener('submit', saveSource);
+            
+            // 点击模态框外部关闭
+            sourceModal.addEventListener('click', (event) => {
+                if (event.target === sourceModal) {
+                    closeModal();
+                }
+            });
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</body>
+</html>
