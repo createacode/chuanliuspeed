@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>川流 —— 一款最接近真实的网络测速工具</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📶</text></svg>">
+    <title>川流测速 - 网络测速工具</title>
+    <link rel="icon" href="/static/chuanliu.ico">
     <style>
         /* 全局样式 */
         * {
@@ -45,6 +45,16 @@
             margin-bottom: 8px;
             font-weight: 700;
             letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px; /* 修改：将间距从12px改为8px */
+        }
+
+        .title-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
         }
 
         .subtitle {
@@ -52,6 +62,10 @@
             opacity: 0.9;
             margin-bottom: 12px;
             font-weight: 400;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.5;
         }
 
         .server-status {
@@ -101,6 +115,36 @@
             margin-bottom: 20px;
         }
 
+        /* 修改：添加完成时间容器样式 */
+        .completion-time-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .time-item {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #9ca3af;
+            font-style: italic;
+            min-width: 200px;
+        }
+
+        .time-label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+
+        .time-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #4f46e5;
+        }
+
         .result-label {
             font-size: 1.1rem;
             color: #6b7280;
@@ -141,13 +185,6 @@
             opacity: 0.9;
         }
 
-        .completion-time {
-            font-size: 0.9rem;
-            color: #9ca3af;
-            margin-top: 8px;
-            font-style: italic;
-        }
-
         /* 折线图区域 */
         .chart-row {
             margin: 20px 0;
@@ -182,6 +219,106 @@
         #speedChart {
             width: 100%;
             height: 100%;
+        }
+
+        /* 总进度条区域 */
+        .total-progress-row {
+            margin: 0 0 20px 0;
+            padding: 0;
+        }
+
+        .total-progress-container {
+            background: white;
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .total-progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        .total-progress-label {
+            font-weight: 600;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .total-progress-bar {
+            height: 18px; /* 加宽进度条 */
+            background: #e5e7eb;
+            border-radius: 9px; /* 与高度一半保持一致，形成圆形边缘 */
+            overflow: hidden;
+            margin-bottom: 8px;
+            position: relative;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .total-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+            border-radius: 9px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); /* 平滑过渡 */
+            width: 0%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 添加向左斜的斜线阴影效果 */
+        .total-progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: linear-gradient(
+                -45deg, /* 改为向左斜 */
+                rgba(255, 255, 255, 0.15) 25%,
+                transparent 25%,
+                transparent 50%,
+                rgba(255, 255, 255, 0.15) 50%,
+                rgba(255, 255, 255, 0.15) 75%,
+                transparent 75%,
+                transparent
+            );
+            background-size: 20px 20px;
+            animation: progress-stripes 1s linear infinite;
+            border-radius: 9px;
+        }
+
+        @keyframes progress-stripes {
+            from {
+                background-position: 0 0;
+            }
+            to {
+                background-position: -20px 0; /* 改为向左移动 */
+            }
+        }
+
+        /* 修改：进度条完成时的颜色换成暖色 */
+        .total-progress-fill.complete {
+            background: linear-gradient(90deg, #f59e0b, #ef4444); /* 修改为暖色：从橙色到红色 */
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+        }
+
+        .total-progress-fill.complete::after {
+            display: none; /* 完成时移除斜线 */
+        }
+
+        .total-progress-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #6b7280;
         }
 
         /* 计算过程区域 */
@@ -320,6 +457,11 @@
                 flex-direction: column;
                 gap: 20px;
                 align-items: center;
+            }
+            
+            .completion-time-container {
+                flex-direction: column;
+                gap: 15px;
             }
         }
 
@@ -913,9 +1055,27 @@
             text-align: center;
             padding: 16px;
             color: #6b7280;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             border-top: 1px solid #e5e7eb;
             background: #f9fafb;
+        }
+
+        .footer p {
+            margin: 0;
+        }
+
+        .footer a {
+            color: #0066ff;
+            text-decoration: none;
+            font-weight: 600;
+            background: linear-gradient(90deg, #0066ff, #00c3ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: filter .3s;
+        }
+
+        .footer a:hover {
+            filter: brightness(1.3);
         }
 
         /* 响应式调整 */
@@ -931,6 +1091,18 @@
             
             h1 {
                 font-size: 2rem;
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .title-icon {
+                width: 32px;
+                height: 32px;
+            }
+            
+            .subtitle {
+                font-size: 0.95rem;
+                padding: 0 10px;
             }
             
             .main-content {
@@ -966,13 +1138,35 @@
             .chart-container {
                 height: 150px;
             }
+            
+            .footer {
+                font-size: 0.8rem;
+                padding: 12px;
+            }
+            
+            .total-progress-bar {
+                height: 14px;
+                border-radius: 7px;
+            }
+            
+            .completion-time-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .time-item {
+                min-width: auto;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>📶 川流 —— 一款最接近真实的网络测速工具</h1>
+            <h1>
+                <img src="/static/chuanliu.png" alt="川流测速" class="title-icon" onerror="this.src='/static/chuanliu.ico';this.onerror=null;">
+                川流测速 —— 一款最接近真实的网络测速工具
+            </h1>
             <div class="subtitle">建议先点击验证链接再开始测速，测速前请先勾选可用源，理论上源越多越接近真实值！</div>
             <div id="serverStatus" class="server-status">
                 <span class="loading"></span> 正在验证下载源...
@@ -995,7 +1189,17 @@
                         <div class="speed-unit">MB/s</div>
                     </div>
                 </div>
-                <div class="completion-time" id="completionTime">测试完成时间: --</div>
+                <!-- 修改：添加完成时间容器 -->
+                <div class="completion-time-container">
+                    <div class="time-item">
+                        <span class="time-label">本次测速总耗时</span>
+                        <span class="time-value" id="totalTimeValue">--</span>
+                    </div>
+                    <div class="time-item">
+                        <span class="time-label">测速完成时间</span>
+                        <span class="time-value" id="completionTimeValue">--</span>
+                    </div>
+                </div>
             </div>
             
             <!-- 折线图区域 -->
@@ -1005,6 +1209,26 @@
                 </div>
                 <div class="chart-container">
                     <canvas id="speedChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 总进度条区域 -->
+            <div class="total-progress-row" id="totalProgressRow" style="display: none;">
+                <div class="total-progress-container">
+                    <div class="total-progress-header">
+                        <div class="total-progress-label">
+                            <i>📈</i> 总体测试进度
+                        </div>
+                        <div id="totalProgressPercent">0%</div>
+                    </div>
+                    <div class="total-progress-bar">
+                        <div class="total-progress-fill" id="totalProgressFill"></div>
+                    </div>
+                    <div class="total-progress-stats">
+                        <div>已完成: <span id="totalCompleted">0</span>/<span id="totalSources">0</span></div>
+                        <div>成功: <span id="totalSuccess">0</span></div>
+                        <div>失败: <span id="totalFailed">0</span></div>
+                    </div>
                 </div>
             </div>
             
@@ -1103,7 +1327,7 @@
 
         <!-- 页脚 -->
         <div class="footer">
-            <p>川流不息-网络测速工具 v1.5 | Copyright &copy; 2026 by <a href="mailto:mantaqing@163.com" style="color:#0066ff;text-decoration:none;font-weight:600;background:linear-gradient(90deg,#0066ff,#00c3ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;transition:filter .3s" onmouseover="this.style.filter='brightness(1.3)'" onmouseout="this.style.filter=''">XAF</a> | 本地端口: 8400 | 单个超时: 159秒 | 测试结果保存在"结果"文件夹中</p>
+            <p>川流不息-网络测速工具 v1.61 | Copyright &copy; 2026 by <a href="mailto:mantaqing@163.com">XAF</a> | 本地端口: 8400 | 单个超时: 159秒 | 测试记录保存在"结果"文件夹中</p>
         </div>
     </div>
 
@@ -1151,6 +1375,15 @@
         let calculationSteps = []; // 存储计算过程的每一步
         let chart = null; // 存储图表实例
         let chartData = []; // 存储图表数据
+        let totalSelectedSources = 0; // 总共选择的源数量
+        let testStatistics = { // 测试统计
+            total: 0,
+            completed: 0,
+            success: 0,
+            failed: 0
+        };
+        let testStartTime = null; // 测试开始时间
+        let totalElapsedTime = 0; // 总耗时（秒）
 
         // DOM 元素
         const sourcesList = document.getElementById('sourcesList');
@@ -1162,7 +1395,15 @@
         const calculationContent = document.getElementById('calculationContent');
         const calculationRow = document.getElementById('calculationRow');
         const chartRow = document.getElementById('chartRow');
-        const completionTimeElement = document.getElementById('completionTime');
+        const totalProgressRow = document.getElementById('totalProgressRow');
+        const totalProgressFill = document.getElementById('totalProgressFill');
+        const totalProgressPercent = document.getElementById('totalProgressPercent');
+        const totalCompleted = document.getElementById('totalCompleted');
+        const totalSources = document.getElementById('totalSources');
+        const totalSuccess = document.getElementById('totalSuccess');
+        const totalFailed = document.getElementById('totalFailed');
+        const totalTimeValue = document.getElementById('totalTimeValue'); // 修改：更新元素引用
+        const completionTimeValue = document.getElementById('completionTimeValue'); // 修改：更新元素引用
         const testIdElement = document.getElementById('testId');
         const startTestBtn = document.getElementById('startTest');
         const resetStateBtn = document.getElementById('resetState');
@@ -1235,13 +1476,24 @@
             
             sourcesList.innerHTML = '';
             
+            // 清空选中状态
+            selectedSources.clear();
+            
             Object.entries(sources).forEach(([id, source]) => {
-                const isChecked = selectedSources.has(id);
                 const isValid = source.valid || false;
                 const isEnabled = source.enabled !== false;
+                const lastStatus = source.last_status || '';
+                const isTimeout = lastStatus.includes('超时') || lastStatus.includes('测试超时');
+                
+                // 默认选中：可用且非超时的源
+                const shouldSelectByDefault = isValid && !isTimeout && isEnabled;
+                if (shouldSelectByDefault) {
+                    selectedSources.add(id);
+                }
+                
+                const isChecked = selectedSources.has(id);
                 const size = source.size || '未知';
                 const lastValidation = source.last_validation || '从未验证';
-                const lastStatus = source.last_status || '';
                 
                 // 根据状态确定样式
                 let statusClass = 'status-invalid';
@@ -1256,7 +1508,7 @@
                 }
                 
                 // 检查是否是超时状态
-                if (lastStatus.includes('超时') || lastStatus.includes('测试超时')) {
+                if (isTimeout) {
                     statusClass = 'status-timeout';
                     statusText = '超时';
                 }
@@ -1269,7 +1521,7 @@
                     <div class="source-checkbox">
                         <input type="checkbox" id="source_${id}" 
                                ${isChecked ? 'checked' : ''}
-                               ${(!isValid || !isEnabled) ? 'disabled' : ''}>
+                               ${(!isEnabled) ? 'disabled' : ''}>
                     </div>
                     <div class="source-info">
                         <div class="source-name">${source.name}</div>
@@ -1403,8 +1655,13 @@
                     chartData = [];
                     calculationContent.innerHTML = '';
                     completionTime = null;
-                    completionTimeElement.textContent = '测试完成时间: --';
+                    completionTimeValue.textContent = '--'; // 修改：更新元素引用
+                    totalTimeValue.textContent = '--'; // 修改：重置总耗时显示
                     lastSpeedData = { avgSpeedMbps: 0, avgSpeedMBs: 0 };
+                    
+                    // 重置总耗时计时
+                    testStartTime = Date.now();
+                    totalElapsedTime = 0;
                     
                     // 重置图表
                     chartRow.style.display = 'none';
@@ -1412,6 +1669,27 @@
                         chart.destroy();
                         chart = null;
                     }
+                    
+                    // 重置总进度条
+                    totalProgressRow.style.display = 'none';
+                    totalProgressFill.style.width = '0%';
+                    totalProgressPercent.textContent = '0%';
+                    totalProgressFill.classList.remove('complete');
+                    
+                    // 更新测试统计
+                    totalSelectedSources = selectedSources.size;
+                    testStatistics = {
+                        total: totalSelectedSources,
+                        completed: 0,
+                        success: 0,
+                        failed: 0
+                    };
+                    
+                    // 更新总进度显示
+                    totalSources.textContent = totalSelectedSources;
+                    totalCompleted.textContent = '0';
+                    totalSuccess.textContent = '0';
+                    totalFailed.textContent = '0';
                     
                     // 更新平均速度标签
                     averageSpeedLabel.textContent = '当前平均下载速度';
@@ -1457,7 +1735,12 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    showNotification(data.message, 'info');
+                    showNotification('测试已停止', 'info');
+                    // 更新总耗时
+                    if (testStartTime) {
+                        totalElapsedTime = (Date.now() - testStartTime) / 1000;
+                        totalTimeValue.textContent = `${totalElapsedTime.toFixed(2)}秒`; // 修改：更新元素显示
+                    }
                 }
             } catch (error) {
                 console.error('停止测试失败:', error);
@@ -1467,6 +1750,11 @@
         // 重置所有状态
         async function resetState() {
             try {
+                // 首先停止测试
+                if (isTesting) {
+                    await stopTest();
+                }
+                
                 const response = await fetch('/api/reset', {
                     method: 'POST'
                 });
@@ -1483,6 +1771,18 @@
                     averageContainer.classList.remove('show');
                     updateTestButtonState();
                     
+                    // 重置总耗时
+                    testStartTime = null;
+                    totalElapsedTime = 0;
+                    totalTimeValue.textContent = '--'; // 修改：重置总耗时显示
+                    completionTimeValue.textContent = '--'; // 修改：重置完成时间显示
+                    
+                    // 重置总进度条
+                    totalProgressRow.style.display = 'none';
+                    totalProgressFill.style.width = '0%';
+                    totalProgressPercent.textContent = '0%';
+                    totalProgressFill.classList.remove('complete');
+                    
                     // 清除选中状态
                     selectedSources.clear();
                     
@@ -1493,7 +1793,6 @@
                     chartData = [];
                     calculationContent.innerHTML = '';
                     completionTime = null;
-                    completionTimeElement.textContent = '测试完成时间: --';
                     lastSpeedData = { avgSpeedMbps: 0, avgSpeedMBs: 0 };
                     
                     // 重置图表
@@ -1582,16 +1881,31 @@
                             // 更新平均速度标签
                             averageSpeedLabel.textContent = '最终平均下载速度';
                             
+                            // 为总进度条添加完成效果（暖色）
+                            totalProgressFill.classList.add('complete');
+                            
+                            // 更新总耗时
+                            if (testStartTime) {
+                                totalElapsedTime = (Date.now() - testStartTime) / 1000;
+                                totalTimeValue.textContent = `${totalElapsedTime.toFixed(2)}秒`; // 修改：更新元素显示
+                            }
+                            
                             // 重新加载源列表以更新状态
                             loadSources();
                             
                             // 更新完成时间
                             if (!completionTime) {
                                 completionTime = new Date();
-                                completionTimeElement.textContent = `测试完成时间: ${completionTime.toLocaleString('zh-CN')}`;
+                                completionTimeValue.textContent = completionTime.toLocaleString('zh-CN'); // 修改：更新元素显示
                             }
                             
                             showNotification('测试完成', 'success');
+                        } else if (isTesting) {
+                            // 测试中更新总耗时
+                            if (testStartTime) {
+                                totalElapsedTime = (Date.now() - testStartTime) / 1000;
+                                totalTimeValue.textContent = `${totalElapsedTime.toFixed(2)}秒`; // 修改：更新元素显示
+                            }
                         }
                         
                         if (data.results) {
@@ -1713,9 +2027,75 @@
             }
         }
 
-        // 创建图表
+        // 更新总进度条
+        function updateTotalProgress() {
+            if (totalSelectedSources === 0) return;
+            
+            // 计算进度百分比
+            const progressPercent = (testStatistics.completed / totalSelectedSources) * 100;
+            
+            // 使用requestAnimationFrame实现平滑动画
+            const currentWidth = parseFloat(totalProgressFill.style.width) || 0;
+            const targetWidth = progressPercent;
+            
+            // 如果目标宽度与当前宽度相差较大，使用动画过渡
+            if (Math.abs(targetWidth - currentWidth) > 0.1) {
+                // 使用缓动函数实现平滑过渡
+                const animateProgress = () => {
+                    const current = parseFloat(totalProgressFill.style.width) || 0;
+                    const delta = targetWidth - current;
+                    
+                    // 使用缓动函数，越接近目标速度越慢
+                    const speed = 0.1;
+                    const newWidth = current + delta * speed;
+                    
+                    totalProgressFill.style.width = `${newWidth}%`;
+                    totalProgressPercent.textContent = `${newWidth.toFixed(1)}%`;
+                    
+                    // 更新统计数字
+                    totalCompleted.textContent = testStatistics.completed;
+                    totalSuccess.textContent = testStatistics.success;
+                    totalFailed.textContent = testStatistics.failed;
+                    
+                    if (Math.abs(targetWidth - newWidth) > 0.1) {
+                        requestAnimationFrame(animateProgress);
+                    } else {
+                        totalProgressFill.style.width = `${targetWidth}%`;
+                        totalProgressPercent.textContent = `${targetWidth.toFixed(1)}%`;
+                    }
+                };
+                
+                requestAnimationFrame(animateProgress);
+            } else {
+                // 直接设置最终值
+                totalProgressFill.style.width = `${targetWidth}%`;
+                totalProgressPercent.textContent = `${targetWidth.toFixed(1)}%`;
+                totalCompleted.textContent = testStatistics.completed;
+                totalSuccess.textContent = testStatistics.success;
+                totalFailed.textContent = testStatistics.failed;
+            }
+            
+            // 显示总进度条（只要有测试进行就显示）
+            if (isTesting && totalSelectedSources > 0) {
+                totalProgressRow.style.display = 'block';
+            }
+            
+            // 如果测试完成，添加完成效果（暖色）
+            if (!isTesting && progressPercent >= 100) {
+                totalProgressFill.classList.add('complete');
+            }
+        }
+
+        // 创建图表 - 添加回退机制
         function createChart() {
             const ctx = document.getElementById('speedChart').getContext('2d');
+            
+            // 检查Chart对象是否存在
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js未加载，尝试从CDN加载...');
+                loadChartFromCDN();
+                return;
+            }
             
             // 准备数据
             const labels = chartData.map((item, index) => `源${index + 1}`);
@@ -1816,8 +2196,32 @@
             });
         }
 
+        // 从CDN加载Chart.js
+        function loadChartFromCDN() {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+            script.onload = function() {
+                console.log('Chart.js从CDN加载成功');
+                // 重新尝试创建图表
+                if (chartData.length > 0) {
+                    createChart();
+                }
+            };
+            script.onerror = function() {
+                console.error('无法从CDN加载Chart.js');
+                showNotification('图表库加载失败，将无法显示图表', 'error');
+            };
+            document.head.appendChild(script);
+        }
+
         // 更新图表数据
         function updateChart() {
+            // 如果Chart.js未加载，尝试从CDN加载
+            if (typeof Chart === 'undefined') {
+                loadChartFromCDN();
+                return;
+            }
+            
             // 如果图表不存在且有待显示的数据，创建图表
             if (!chart && chartData.length > 0) {
                 chartRow.style.display = 'block';
@@ -1848,6 +2252,14 @@
                 completedCountElement.textContent = stats.completed_count || 0;
                 successCountElement.textContent = stats.success_count || 0;
                 failedCountElement.textContent = stats.failed_count || 0;
+                
+                // 更新总进度统计
+                testStatistics.completed = stats.completed_count || 0;
+                testStatistics.success = stats.success_count || 0;
+                testStatistics.failed = stats.failed_count || 0;
+                
+                // 更新总进度条
+                updateTotalProgress();
             }
             
             // 更新或创建结果项
@@ -2228,6 +2640,29 @@
             });
         }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 先尝试加载本地Chart.js，如果失败则使用CDN -->
+    <script src="/static/chart.js" onerror="console.error('本地Chart.js加载失败，尝试从CDN加载');"></script>
+    <script>
+        // 检查Chart.js是否加载成功，如果没有则从CDN加载
+        window.addEventListener('load', function() {
+            // 延迟检查，确保脚本有足够时间加载
+            setTimeout(function() {
+                if (typeof Chart === 'undefined') {
+                    console.log('本地Chart.js未加载，尝试从CDN加载...');
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+                    script.onload = function() {
+                        console.log('Chart.js从CDN加载成功');
+                    };
+                    script.onerror = function() {
+                        console.error('无法从CDN加载Chart.js');
+                    };
+                    document.head.appendChild(script);
+                } else {
+                    console.log('本地Chart.js加载成功');
+                }
+            }, 1000);
+        });
+    </script>
 </body>
 </html>
