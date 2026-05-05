@@ -48,7 +48,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px; /* 修改：将间距从12px改为8px */
+            gap: 8px;
         }
 
         .title-icon {
@@ -115,7 +115,6 @@
             margin-bottom: 20px;
         }
 
-        /* 修改：添加完成时间容器样式 */
         .completion-time-container {
             display: flex;
             justify-content: center;
@@ -253,9 +252,9 @@
         }
 
         .total-progress-bar {
-            height: 18px; /* 加宽进度条 */
+            height: 18px;
             background: #e5e7eb;
-            border-radius: 9px; /* 与高度一半保持一致，形成圆形边缘 */
+            border-radius: 9px;
             overflow: hidden;
             margin-bottom: 8px;
             position: relative;
@@ -266,13 +265,12 @@
             height: 100%;
             background: linear-gradient(90deg, #10b981, #3b82f6);
             border-radius: 9px;
-            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); /* 平滑过渡 */
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             width: 0%;
             position: relative;
             overflow: hidden;
         }
 
-        /* 添加向左斜的斜线阴影效果 */
         .total-progress-fill::after {
             content: '';
             position: absolute;
@@ -281,7 +279,7 @@
             right: 0;
             bottom: 0;
             background-image: linear-gradient(
-                -45deg, /* 改为向左斜 */
+                -45deg,
                 rgba(255, 255, 255, 0.15) 25%,
                 transparent 25%,
                 transparent 50%,
@@ -300,18 +298,17 @@
                 background-position: 0 0;
             }
             to {
-                background-position: -20px 0; /* 改为向左移动 */
+                background-position: -20px 0;
             }
         }
 
-        /* 修改：进度条完成时的颜色换成暖色 */
         .total-progress-fill.complete {
-            background: linear-gradient(90deg, #f59e0b, #ef4444); /* 修改为暖色：从橙色到红色 */
+            background: linear-gradient(90deg, #f59e0b, #ef4444);
             box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
         }
 
         .total-progress-fill.complete::after {
-            display: none; /* 完成时移除斜线 */
+            display: none;
         }
 
         .total-progress-stats {
@@ -1165,7 +1162,7 @@
         <header>
             <h1>
                 <img src="/static/chuanliu.png" alt="川流测速" class="title-icon" onerror="this.src='/static/chuanliu.ico';this.onerror=null;">
-                川流测速 —— 一款最接近真实的网络测速工具
+                川流测速 —— 一款最接近真实速度的网络测速工具
             </h1>
             <div class="subtitle">建议先点击验证链接再开始测速，测速前请先勾选可用源，理论上源越多越接近真实值！</div>
             <div id="serverStatus" class="server-status">
@@ -1189,14 +1186,13 @@
                         <div class="speed-unit">MB/s</div>
                     </div>
                 </div>
-                <!-- 修改：添加完成时间容器 -->
                 <div class="completion-time-container">
                     <div class="time-item">
                         <span class="time-label">本次测速总耗时</span>
                         <span class="time-value" id="totalTimeValue">--</span>
                     </div>
                     <div class="time-item">
-                        <span class="time-label">测速完成时间</span>
+                        <span class="time-label">测试完成时间</span>
                         <span class="time-value" id="completionTimeValue">--</span>
                     </div>
                 </div>
@@ -1264,6 +1260,10 @@
                 <div class="panel-header">
                     <div class="panel-title">📥 下载源配置</div>
                     <div class="panel-actions">
+                        <!-- 新增：导入按钮 -->
+                        <button class="icon-btn" id="importSources" title="批量导入下载源">📂</button>
+                        <!-- 新增：导出按钮 -->
+                        <button class="icon-btn" id="exportSources" title="导出选中下载源">💾</button>
                         <button class="icon-btn" id="addSource" title="添加下载源">+</button>
                         <button class="icon-btn" id="refreshSources" title="刷新列表">↻</button>
                     </div>
@@ -1327,7 +1327,7 @@
 
         <!-- 页脚 -->
         <div class="footer">
-            <p>川流不息-网络测速工具 v1.61 | Copyright &copy; 2026 by <a href="mailto:mantaqing@163.com">XAF</a> | 本地端口: 8400 | 单个超时: 159秒 | 测试记录保存在"结果"文件夹中</p>
+            <p>川流不息-网络测速工具 v1.6 | Copyright &copy; 2026 by <a href="mailto:mantaqing@163.com">XAF</a> | 本地端口: 8400 | 单个超时: 159秒 | 测试记录保存在"结果"文件夹中</p>
         </div>
     </div>
 
@@ -1402,8 +1402,8 @@
         const totalSources = document.getElementById('totalSources');
         const totalSuccess = document.getElementById('totalSuccess');
         const totalFailed = document.getElementById('totalFailed');
-        const totalTimeValue = document.getElementById('totalTimeValue'); // 修改：更新元素引用
-        const completionTimeValue = document.getElementById('completionTimeValue'); // 修改：更新元素引用
+        const totalTimeValue = document.getElementById('totalTimeValue');
+        const completionTimeValue = document.getElementById('completionTimeValue');
         const testIdElement = document.getElementById('testId');
         const startTestBtn = document.getElementById('startTest');
         const resetStateBtn = document.getElementById('resetState');
@@ -1411,6 +1411,8 @@
         const validateBtn = document.getElementById('validateSources');
         const addSourceBtn = document.getElementById('addSource');
         const refreshBtn = document.getElementById('refreshSources');
+        const importSourcesBtn = document.getElementById('importSources');
+        const exportSourcesBtn = document.getElementById('exportSources');
         const sourceModal = document.getElementById('sourceModal');
         const closeModalBtn = document.getElementById('closeModal');
         const cancelModalBtn = document.getElementById('cancelModal');
@@ -1655,8 +1657,8 @@
                     chartData = [];
                     calculationContent.innerHTML = '';
                     completionTime = null;
-                    completionTimeValue.textContent = '--'; // 修改：更新元素引用
-                    totalTimeValue.textContent = '--'; // 修改：重置总耗时显示
+                    completionTimeValue.textContent = '--';
+                    totalTimeValue.textContent = '--';
                     lastSpeedData = { avgSpeedMbps: 0, avgSpeedMBs: 0 };
                     
                     // 重置总耗时计时
@@ -1739,7 +1741,7 @@
                     // 更新总耗时
                     if (testStartTime) {
                         totalElapsedTime = (Date.now() - testStartTime) / 1000;
-                        totalTimeValue.textContent = `${totalElapsedTime.toFixed(2)}秒`; // 修改：更新元素显示
+                        totalTimeValue.textContent = `${totalElapsedTime.toFixed(2)}秒`;
                     }
                 }
             } catch (error) {
@@ -1774,8 +1776,8 @@
                     // 重置总耗时
                     testStartTime = null;
                     totalElapsedTime = 0;
-                    totalTimeValue.textContent = '--'; // 修改：重置总耗时显示
-                    completionTimeValue.textContent = '--'; // 修改：重置完成时间显示
+                    totalTimeValue.textContent = '--';
+                    completionTimeValue.textContent = '--';
                     
                     // 重置总进度条
                     totalProgressRow.style.display = 'none';
@@ -1887,7 +1889,7 @@
                             // 更新总耗时
                             if (testStartTime) {
                                 totalElapsedTime = (Date.now() - testStartTime) / 1000;
-                                totalTimeValue.textContent = `${totalElapsedTime.toFixed(2)}秒`; // 修改：更新元素显示
+                                totalTimeValue.textContent = `${totalElapsedTime.toFixed(2)}秒`;
                             }
                             
                             // 重新加载源列表以更新状态
@@ -1896,7 +1898,7 @@
                             // 更新完成时间
                             if (!completionTime) {
                                 completionTime = new Date();
-                                completionTimeValue.textContent = completionTime.toLocaleString('zh-CN'); // 修改：更新元素显示
+                                completionTimeValue.textContent = completionTime.toLocaleString('zh-CN');
                             }
                             
                             showNotification('测试完成', 'success');
@@ -1904,7 +1906,7 @@
                             // 测试中更新总耗时
                             if (testStartTime) {
                                 totalElapsedTime = (Date.now() - testStartTime) / 1000;
-                                totalTimeValue.textContent = `${totalElapsedTime.toFixed(2)}秒`; // 修改：更新元素显示
+                                totalTimeValue.textContent = `${totalElapsedTime.toFixed(2)}秒`;
                             }
                         }
                         
@@ -2617,6 +2619,97 @@
             }, 2000);
         }
 
+        // 批量导入下载源
+        async function importSources() {
+            // 创建文件选择输入框
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = async (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const content = e.target.result;
+                        const jsonData = JSON.parse(content);
+                        
+                        // 简单验证格式
+                        if (typeof jsonData !== 'object') {
+                            throw new Error('无效的JSON格式，必须是对象');
+                        }
+                        
+                        // 发送到后端导入
+                        const response = await fetch('/api/config/import', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: content
+                        });
+                        
+                        const result = await response.json();
+                        if (result.success) {
+                            showNotification(result.message, 'success');
+                            // 重新加载源列表
+                            await loadSources();
+                        } else {
+                            showNotification(result.message || '导入失败', 'error');
+                        }
+                    } catch (err) {
+                        console.error('导入错误:', err);
+                        showNotification('解析JSON文件失败：' + err.message, 'error');
+                    }
+                };
+                reader.readAsText(file, 'UTF-8');
+            };
+            input.click();
+        }
+
+        // 导出选中的下载源
+        function exportSources() {
+            if (selectedSources.size === 0) {
+                showNotification('请先勾选要导出的下载源', 'error');
+                return;
+            }
+            
+            // 构建导出对象（只包含选中的源）
+            const exportObj = {};
+            for (const id of selectedSources) {
+                if (sources[id]) {
+                    // 只保留必要字段：name, url, size, enabled, valid, last_validation, last_status
+                    exportObj[id] = {
+                        name: sources[id].name,
+                        url: sources[id].url,
+                        size: sources[id].size,
+                        enabled: sources[id].enabled,
+                        valid: sources[id].valid,
+                        last_validation: sources[id].last_validation,
+                        last_status: sources[id].last_status
+                    };
+                }
+            }
+            
+            // 生成文件名：yuan_年月日_时分秒_两位随机串.json
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
+            const randomStr = Math.random().toString(36).substring(2, 4);
+            const filename = `yuan_${dateStr}_${randomStr}.json`;
+            
+            // 创建下载链接
+            const dataStr = JSON.stringify(exportObj, null, 2);
+            const blob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showNotification(`已导出 ${selectedSources.size} 个下载源`, 'success');
+        }
+
         // 绑定事件监听器
         function attachEventListeners() {
             startTestBtn.addEventListener('click', startTest);
@@ -2625,6 +2718,8 @@
             validateBtn.addEventListener('click', validateSources);
             addSourceBtn.addEventListener('click', () => openEditModal());
             refreshBtn.addEventListener('click', loadSources);
+            importSourcesBtn.addEventListener('click', importSources);
+            exportSourcesBtn.addEventListener('click', exportSources);
             
             selectAllCheckbox.addEventListener('change', toggleSelectAll);
             
