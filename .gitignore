@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 构建产物
+build/
+dist/
+*.egg-info/
+
+# 本工具运行时数据（默认写入用户数据目录；使用 --data-dir . 时才会出现在仓库）
+下载临时/
+临时下载/
+结果/
+日志/
+download_url.json
+config_state.json
+app.lock
+
+# 编辑器 / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
